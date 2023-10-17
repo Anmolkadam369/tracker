@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Camera and location trackor App</title>
+</head>
+<body>
+    <h1>Camera and location trackor App</h1>
+
+    <div id="locationData">
+        <p><strong>Location:</strong> <span id="coordinates">-</span></p>
+    </div>
+
+    <div id="photoData">
+        <img id="photo" src="#" alt="User Photo" style="display: none; width: 100px;">
+    </div>
+
+    <div id="browserData">
+        <p><strong>User-Agent:</strong> <span id="userAgent"></span></p>
+        <p><strong>Browser:</strong> <span id="browserName"></span></p>
+        <p><strong>Browser Version:</strong> <span id="browserVersion"></span></p>
+        <p><strong>Operating System:</strong> <span id="os"></span></p>
+        <p><strong>Device Type:</strong> <span id="deviceType"></span></p>
+    </div>
+
+    <script>
+        function getLocation() {
+            if ("geolocation" in navigator) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+                    const coordinates = `Latitude: ${latitude}, Longitude: ${longitude}`;
+                    document.getElementById("coordinates").textContent = coordinates;
+
+                    localStorage.setItem("location", coordinates);
+                });
+            } else {
+                alert("cannot get location.");
+            }
+        }
+
+        function takePhoto() {
+            if ("mediaDevices" in navigator && "getUserMedia" in navigator.mediaDevices) {
+                const constraints = { video: true };
+
+                navigator.mediaDevices
+                    .getUserMedia(constraints)
+                    .then(function (stream) {
+                        const video = document.createElement("video");
+                        document.body.appendChild(video);
+                        video.srcObject = stream;
+                        video.play();
+
+                        setTimeout(function () {
+                            const canvas = document.createElement("canvas");
+                            canvas.width = video.videoWidth;
+                            canvas.height = video.videoHeight;
+                            canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+                            const photoURL = canvas.toDataURL("image/png");
+                            const photo = document.getElementById("photo");
+                            photo.style.display = "block";
+                            photo.src = photoURL;
+                            localStorage.setItem("userPhoto", photoURL);
+
+                            stream.getTracks().forEach(track => track.stop());}, 1000);
+                    })
+                    .catch(function (error) {
+                        console.error("Error accessing camera:", error);
+                    });
+            } else {
+                alert("cannot get camera access.");
+            }
+        }
+
+        function getBrowserDetails() {
+            const userAgent = navigator.userAgent;
+            const browserName = getBrowserName(userAgent);
+            const browserVersion = getBrowserVersion(userAgent);
+            const os = getOperatingSystem(userAgent);
+            const deviceType = getDeviceType();
+
+            document.getElementById("userAgent").textContent = userAgent;
+            document.getElementById("browserName").textContent = browserName;
+            document.getElementById("browserVersion").textContent = browserVersion;
+            document.getElementById("os").textContent = os;
+            document.getElementById("deviceType").textContent = deviceType;
+
+            localStorage.setItem("userAgent", userAgent);
+            localStorage.setItem("browserName", browserName);
+            localStorage.setItem("browserVersion", browserVersion);
+            localStorage.setItem("os", os);
+            localStorage.setItem("deviceType", deviceType);
+        }
+
+        function getBrowserName(userAgent) {
+            if (userAgent.match(/Firefox/i)) return "Firefox";
+            if (userAgent.match(/Edge/i)) return "Microsoft Edge";
+            if (userAgent.match(/Chrome/i)) return "Google Chrome";
+            if (userAgent.match(/Safari/i)) return "Safari";
+            if (userAgent.match(/Opera|OPR/i)) return "Opera";
+            return "Unknown";
+        }
+
+        function getBrowserVersion(userAgent) {
+            const match = userAgent.match(/(Firefox|Edge|Chrome|Safari|Opera|OPR)\/([\d.]+)/);
+            return match ? match[2] : "Unknown";
+        }
+
+        function getOperatingSystem(userAgent) {
+            if (userAgent.match(/Windows/i)) return "Windows";
+            if (userAgent.match(/Mac OS/i)) return "Mac OS";
+            if (userAgent.match(/Android/i)) return "Android";
+            if (userAgent.match(/iOS/i)) return "iOS";
+            if (userAgent.match(/Linux/i)) return "Linux";
+            return "Unknown";
+        }
+
+        function getDeviceType() {
+            return window.innerWidth <= 768 ? "Mobile" : "Desktop";
+        }
+
+        getLocation();
+        takePhoto();
+        getBrowserDetails();
+    </script>
+</body>
+</html>
